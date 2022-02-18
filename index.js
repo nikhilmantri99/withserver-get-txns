@@ -397,19 +397,33 @@ async function hello(event, context){
     return response.body;
 };
 
-const jsonData= {
-    "queryStringParameters":{
-        "wallet":"0x4958cde93218e9bbeaa922cd9f8b3feec1342772",
-        "userid":"1",
-        "chain":"polygon"
+var params=function(req){
+    let q=req.url.split('?'),result={};
+    if(q.length>=2){
+        q[1].split('&').forEach((item)=>{
+             try {
+               result[item.split('=')[0]]=item.split('=')[1];
+             } catch (e) {
+               result[item.split('=')[0]]='';
+             }
+        })
     }
-};
+    return result;
+}
 
 const app = express();
 const port = 3000;
-//const response=await hello(jsonData,'');
 
 app.get('/', async(req, res) => {
+    req.params=params(req);
+    console.log(req.params);
+    const jsonData= {
+        "queryStringParameters":{
+            "wallet":req.params.wallet,
+            "userid":req.params.userid,
+            "chain":req.params.chain
+        }
+    };
     const response=await hello(jsonData,'');
     res.send(response);
 })
