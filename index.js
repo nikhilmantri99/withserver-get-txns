@@ -414,7 +414,8 @@ var params=function(req){
 const app = express();
 const port = 3000;
 
-app.get('/', async(req, res) => {
+//app.get('/', async(req, res) => {
+app.get('/', (req, res) => {
     req.params=params(req);
     console.log(req.params);
     const jsonData= {
@@ -424,7 +425,13 @@ app.get('/', async(req, res) => {
             "chain":req.params.chain
         }
     };
-    const response=await hello(jsonData,'');
+    //const response=await hello(jsonData,'');
+    //res.send(response);
+    hello(jsonData,'');
+    var response= {
+        statusCode: 200,
+        body:"Wallet is getting updated",
+    };
     res.send(response);
 })
 
