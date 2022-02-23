@@ -219,6 +219,26 @@ async function get_metrics(ls){ //ls: list of transactions
             revenue+=ls[i]["net_value"];
         }
     }
+    var investment=0;
+    var returns=0;
+    var dict={};
+    for(var i=0;i<ls.length;i++){
+        var NFTstring=ls[i]["tokenaddress"].concat(ls[i]["tokenid"]);
+        if (ls[i]["activity"]=="Bought"){
+            dict[NFTstring]=ls[i]["net_value"];
+        }
+        else if(dict[NFTstring]!=null && ls[i]["activity"]=="Sold"){
+            investment+=dict[NFTstring];
+            returns+=ls[i]["net_value"];
+            delete dict[NFTstring];
+        }
+    }
+    if(investment!=0) {
+        ROI=(returns-investment)*100/investment;
+    }
+    for(var key in dict){
+        inventory_value+=dict[key];
+    }
     return {
         revenue : revenue,
         spending : spending,
