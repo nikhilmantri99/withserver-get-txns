@@ -538,6 +538,7 @@ async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
         else response_body.Item["transactions"]=response_body.Item["transactions"].slice((pg_num-1)*50,pg_num*50);
         return {
             statusCode: 200,
+            status: "Success",
             body: response_body,
         };
     }
@@ -546,6 +547,7 @@ async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
         console.log(e);
         return {
             statusCode: 500,
+            status: "ERROR",
             body: JSON.stringify({ error: e.message }),
         };
     }
