@@ -418,7 +418,10 @@ async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
     let count=0;
     for(let i=0;i<all_transfers.length;i++){
         //console.log("Hello");
-        const value_from_moralis=parseInt(all_transfers[i]["value"])/(10**18);
+        var value_from_moralis=parseInt(all_transfers[i]["value"])/(10**18);
+        if(value_from_moralis==null || isNaN(value_from_moralis)){
+            value_from_moralis=0;
+        }
         //console.log(transfersNFT.result[i].transaction_hash);
         const value_from_hash_scans_=await value_from_hash(all_transfers[i]["transaction_hash"],waddress,
         all_transfers[i]["from_address"],all_transfers[i]["to_address"],chain_name);
@@ -457,6 +460,12 @@ async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
         final_value[0]=rate*final_value[0];
         final_value[1]=rate*final_value[1];
         final_value[2]="ETH";
+        if(isNaN(final_value[0]) || final_value[0]==null){
+            final_value[0]=0;
+        }
+        if(isNaN(final_value[1]) || final_value[1]==null){
+            final_value[1]=0;
+        }
         count++;
         let action;
         let net_value_;
