@@ -11,6 +11,7 @@ import AWS from "aws-sdk";
 import express from "express";
 AWS.config.update({region:'us-east-1'});
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
+var wallet_processing_set={};
 
 async function find_conversion_rate(ticker1,ticker2,timeline){ // gets price of ticker 1 in terms of ticker 2
     if((ticker1=="ETH" && ticker2=="WETH") || (ticker1=="WETH" && ticker2=="ETH") || ticker1==ticker2){
@@ -562,8 +563,19 @@ async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
     }
 }
 
+async function ToProcessWallet(wallet,chain_name){
+    var temp=chain_name.concat(wallet);
+    if(wallet_processing_set[temp]!=null){
+        return false;
+    }
+    else{
+        wallet_processing_set[temp]=1;
+        return true;
+    }
+}
+
 async function hello(event, context){
-    const wallet = event["queryStringParameters"]['wallet'];
+    var wallet = event["queryStringParameters"]['wallet'];
     if(wallet==null){
         return {
             statusCode: 500,
@@ -578,16 +590,16 @@ async function hello(event, context){
     if(chain_name==null){
         chain_name="eth";
     }
-    const ans= await return_NFT_transactions(userId,chain_name,wallet);
-    const response = {
-        statusCode: 200,
-        headers: {
-            "my_header": "my_value"
-        },
-        body:JSON.stringify(ans,null,2),
-        isBase64Encoded: false
-    };
-    return response.body;
+    var to_process=await ToProcessWallet(wallet,chain_name);
+    if(to_process==true){
+        try{
+            await return_NFT_transactions(userId,chain_name,wallet);
+        }
+        finally{
+            var temp=chain_name.concat(wallet);
+            delete wallet_processing_set[temp];
+        }
+    }
 };
 
 var params=function(req){
@@ -606,6 +618,7 @@ var params=function(req){
 
 const app = express();
 const port = 3000;
+
 
 //app.get('/', async(req, res) => {
 app.get('/', (req, res) => {
