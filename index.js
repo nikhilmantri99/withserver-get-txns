@@ -13,6 +13,21 @@ AWS.config.update({region:'us-east-1'});
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 var wallet_processing_set={};
 
+async function fetch_from_url(url_,s=2){
+    var response = await fetch(url_);
+    if (response.status >= 200 && response.status <= 299) {
+        var jsonResponse = await response.json();
+        return jsonResponse;
+    } else {
+        console.log(1);
+        await new Promise(resolve => setTimeout(resolve, s*1000)); // 3 sec
+        console.log(2);
+        response = await fetch(url_);
+        var jsonResponse = await response.json();
+        return jsonResponse;
+    }
+}
+
 async function find_conversion_rate(ticker1,ticker2,timeline){ // gets price of ticker 1 in terms of ticker 2
     if((ticker1=="ETH" && ticker2=="WETH") || (ticker1=="WETH" && ticker2=="ETH") || ticker1==ticker2){
         return 1;
@@ -29,7 +44,7 @@ async function find_conversion_rate(ticker1,ticker2,timeline){ // gets price of 
     const part8=part6;
     const part9="&key=ckey_c4b9331412914d59845089270d0";
     const url_complete=part1.concat(part2,part3,part4,part5,part6,part7,part8,part9);
-    const ans = await fetch(url_complete).then(response=>{return response.json();});
+    const ans = await fetch_from_url(url_complete);
     //console.log(url_complete);
     //console.log(ans);
     if(ans==null || ans["data"]==null || ans["data"]["prices"]==null || ans["data"]["prices"].length==0 || ans["data"]["prices"][0]["price"]==null) return 0;
@@ -54,7 +69,7 @@ async function covalent_logs(txn_hash,waddress,NFTfrom,NFTto,chain_name){
     const part3='/?&key=';
     const part4='ckey_c4b9331412914d59845089270d0';
     const url_complete=part1.concat(part2,part3,part4);
-    const ans = await fetch(url_complete).then(response=>{return response.json();});
+    const ans = await fetch_from_url(url_complete);
     let mainmoney=0,comission=0,i=0;
     let rate_matic2eth=1;
     let gas_price=0;
@@ -122,7 +137,11 @@ async function etherscan_logs(txn_hash,waddress,NFTfrom,NFTto,chain_name,nft_cou
     const part3='&apikey=';
     const part4='3K72Z6I2T121TAQZ9DY34EF6F9NADKAH87';
     const url_complete=part1.concat(part2,part3,part4);
-    const ans = await fetch(url_complete).then(response=>{return response.json();});
+    var ans = await fetch_from_url(url_complete,5);
+    if (ans["result"]=="Max rate limit exceeded"){
+        await new Promise(resolve => setTimeout(resolve, 5*1000)); // 3 sec
+        ans = await fetch_from_url(url_complete,5);
+    }
     let mainmoney=0,commission=0;
     let count_occurence=0;//useful for bundle
     let count_occurence2=0;
@@ -160,7 +179,11 @@ async function polygonscan_logs(txn_hash,waddress,NFTfrom,NFTto,chain_name,nft_c
     const part4='KSPP4UMVPIGFV24FEA19RGND8XN9V3D3C3';
     const url_complete=part1.concat(part2,part3,part4);
     //console.log(url_complete);
-    const ans = await fetch(url_complete).then(response=>{return response.json();});
+    var ans = await fetch_from_url(url_complete,5);
+    if (ans["result"]=="Max rate limit exceeded"){
+        await new Promise(resolve => setTimeout(resolve, 5*1000)); // 3 sec
+        ans = await fetch_from_url(url_complete,5);
+    }
     //console.log(ans);
     let mainmoney=0,commission=0;
     let count_occurence=0;//useful for bundle
