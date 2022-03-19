@@ -15,7 +15,6 @@ var wallet_processing_set={};
 import {fetch_from_url,find_conversion_rate,covalent_logs,etherscan_logs,polygonscan_logs,value_from_hash,transaction_row} from './utils/variouslogs.js';
 import {get_image_urls,get_inventory} from './utils/inventory_utils.js';
 import {get_metrics_token_wise,get_metrics} from './utils/metric_utils.js';
-import { utils } from "@project-serum/anchor";
 
 async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
     var to_update=false;
