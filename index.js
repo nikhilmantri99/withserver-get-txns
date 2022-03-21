@@ -186,6 +186,7 @@ async function hello(event, context){
         }
         finally{
             var temp=chain_name.concat(wallet);
+            console.log("Finished processing the wallet: ",wallet," chain:",chain_name);
             delete wallet_processing_set[temp];
         }
     }
