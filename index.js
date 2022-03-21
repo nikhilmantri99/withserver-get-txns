@@ -7,7 +7,7 @@ AWS.config.update({region:'us-east-1'});
 import {fetch_from_url,find_conversion_rate,covalent_logs,etherscan_logs,polygonscan_logs,value_from_hash,transaction_row} from './utils/variouslogs.js';
 import {get_image_urls,get_inventory} from './utils/inventory_utils.js';
 import {get_metrics_token_wise,get_metrics} from './utils/metric_utils.js';
-import { utils } from "@project-serum/anchor";
+//import { utils } from "@project-serum/anchor";
 import {get_total_pages,put_txns,get_all_txns,get_page_txns,put_inventory,get_all_inventory,get_page_inventory,
         put_tokenwisemetrics,get_all_tokenwisemetrics,get_page_tokenwisemetrics,put_overall_metrics,get_overall_metrics} from "./utils/dynamodb_utils.js";
 
