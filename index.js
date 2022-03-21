@@ -4,8 +4,8 @@ import AWS from "aws-sdk";
 import express from "express";
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 AWS.config.update({
-    accessKeyId:"AKIA2F4FHJNUJ2UVX6HT",
-    secretAccessKey:"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",
+    accessKeyId:"AKIA2F4FHJNUGUQVNUM3",
+    secretAccessKey:"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",
     region:'us-east-1'});
 import {fetch_from_url,find_conversion_rate,covalent_logs,etherscan_logs,polygonscan_logs,value_from_hash,transaction_row} from './utils/variouslogs.js';
 import {get_image_urls,get_inventory} from './utils/inventory_utils.js';
