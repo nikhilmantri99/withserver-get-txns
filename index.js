@@ -1,39 +1,53 @@
-// export const hello: APIGatewayProxyHandler = async (event, context) => {
-//   return {
-//     statusCode: 200,
-//     body: JSON.stringify(1,null,2),
-//   };
-// };
-//import { APIGatewayProxyHandler } from "aws-lambda";
 import Moralis from "moralis/node.js";
 import fetch from "node-fetch";
 import AWS from "aws-sdk";
 import express from "express";
-AWS.config.update({region:'us-east-1'});
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-var wallet_processing_set={};
+AWS.config.update({region:'us-east-1'});
 import {fetch_from_url,find_conversion_rate,covalent_logs,etherscan_logs,polygonscan_logs,value_from_hash,transaction_row} from './utils/variouslogs.js';
 import {get_image_urls,get_inventory} from './utils/inventory_utils.js';
 import {get_metrics_token_wise,get_metrics} from './utils/metric_utils.js';
+import { utils } from "@project-serum/anchor";
+import {get_total_pages,put_txns,get_all_txns,get_page_txns,put_inventory,get_all_inventory,get_page_inventory,
+        put_tokenwisemetrics,get_all_tokenwisemetrics,get_page_tokenwisemetrics,put_overall_metrics,get_overall_metrics} from "./utils/dynamodb_utils.js";
 
-async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
+var wallet_processing_set={};
+
+async function return_state(waddress,chain_name,txn_page=1,inventory_page=1,tokenwisemetric_page=1){
+    var txn_ls=await get_page_txns(waddress,chain_name,txn_page);
+    var inv_ls=await get_page_inventory(waddress,chain_name,inventory_page);
+    var tokenwisemetric_ls=await get_page_tokenwisemetrics(waddress,chain_name,tokenwisemetric_page);
+    var overall_metrics =await get_overall_metrics(waddress,chain_name);
+    var obj={
+        walletId :waddress,
+        chainName : chain_name,
+        overall_metrics: overall_metrics,
+        transactions: txn_ls[0],
+        total_txns_page: txn_ls[1],
+        curr_txns_page:txn_ls[3],
+        inventory: inv_ls[0],
+        total_inventory_pages: inv_ls[1],
+        curr_inventory_page: inv_ls[3],
+        tokenwise_metrics: tokenwisemetric_ls[0],
+        total_tokenwisemetric_pages: tokenwisemetric_ls[1],
+        current_tokenwisemetric_page: tokenwisemetric_ls[3],
+    }
+    return obj;
+}
+
+async function return_NFT_transactions(userid,chain_name,waddress,txn_page=1,inventory_page=1,tokenwisemetric_page=1){
     var to_update=false;
     var curr_txn_list=[];
     var txns_skipped=0;
     var txns_processed=0;
-    const get_back = {
-        TableName: "lambda-wallet-chain-transactions",
-        Key: {
-            walletId: waddress,
-            chainName: chain_name,        },
-    };
-    const newResult = await dynamoDb.get(get_back).promise();
-    if(newResult!=null && newResult.Item!=null){
+    const newResult = await get_page_txns(waddress,chain_name,1);
+    if(newResult[0]!=null){
         to_update=true;
-        curr_txn_list=curr_txn_list.concat(newResult.Item["transactions"]);
+        var ls=await get_all_txns(waddress,chain_name)
+        curr_txn_list=curr_txn_list.concat(ls);
         console.log("exists in the table.");
-        txns_skipped=newResult.Item["txns_skipped"];
-        txns_processed=newResult.Item["txns_processed"];
+        txns_processed=newResult[4];
+        txns_skipped=newResult[5];
     }
     var transcations_list=[];
     const serverUrl = "https://kpvcez1i2tg3.usemoralis.com:2053/server";
@@ -75,7 +89,7 @@ async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
     if(curr_txn_list.length!=0){
         transcations_list=transcations_list.concat(curr_txn_list);
     }
-
+    await put_txns(waddress,chain_name,transcations_list,txns_processed,txns_skipped);
     const q={chain:chain_name,address: waddress};
     const inventory_NFTS=await Moralis.Web3API.account.getNFTs(q);
     console.log("NFTs in inventory using Moralis: ",inventory_NFTS.result.length);
@@ -86,41 +100,21 @@ async function return_NFT_transactions(userid,chain_name,waddress,pg_num=1){
     else{
         metrics_=await get_metrics_token_wise(transcations_list,inventory_NFTS.result);
     }
-    const metrics=metrics_[0];
-    const inventory_things=metrics_[1];
-    var total_pages;
-    if(transcations_list.length%50==0) total_pages= Math.floor(transcations_list.length/50);
-    else total_pages= Math.floor(transcations_list.length/50)+1;
-    var curr_page=pg_num;
-    if(curr_page>total_pages){
-        curr_page=total_pages;
-    }
-    const transactions={
-        TableName: get_back.TableName,
-        Item: {
-            walletId :get_back.Key.walletId,
-            chainName : get_back.Key.chainName,
-            transactions: transcations_list,
-            total_pages: total_pages,
-            curr_page: curr_page,
-            txns_skipped : txns_skipped,
-            txns_processed : txns_processed,
-            overall_metrics : metrics["overall_metrics"],
-            token_wise_metrics: metrics,
-            inventory_NFTS: inventory_things,
-        }
-    }
+    var overall_metrics=metrics_[0];
+    await put_overall_metrics(waddress,chain_name,overall_metrics);
+
+    var token_wise_metrics=metrics_[1];
+    await put_tokenwisemetrics(waddress,chain_name,token_wise_metrics);
+
+    var inventory_things=metrics_[2];
+    await put_inventory(waddress,chain_name,inventory_things);
 
     try{
-        await dynamoDb.put(transactions).promise();
-        const response_body = await dynamoDb.get(get_back).promise();
-        var total_len=response_body.Item["transactions"].length;
-        if(pg_num>=total_pages) response_body.Item["transactions"]=response_body.Item["transactions"].slice((total_pages-1)*50,total_len);
-        else response_body.Item["transactions"]=response_body.Item["transactions"].slice((pg_num-1)*50,pg_num*50);
+        var body= await return_state(waddress,chain_name,txn_page,inventory_page,tokenwisemetric_page);
         return {
             statusCode: 200,
             status: "Success",
-            body: response_body,
+            body: body,
         };
     }
     catch(e){
@@ -161,10 +155,31 @@ async function hello(event, context){
     if(chain_name==null){
         chain_name="eth";
     }
+    let txn_page=event["queryStringParameters"]['txn_page'];
+    if(txn_page==null){
+        txn_page=1;
+    }
+    else{
+        txn_page=parseInt(txn_page);
+    }
+    let inventory_page=event["queryStringParameters"]['inventory_page'];
+    if(inventory_page==null){
+        inventory_page=1;
+    }
+    else{
+        inventory_page=parseInt(inventory_page);
+    }
+    let token_page=event["queryStringParameters"]['token_page'];
+    if(token_page==null){
+        token_page=1;
+    }
+    else{
+        token_page=parseInt(token_page);
+    }
     var to_process=await ToProcessWallet(wallet,chain_name);
     if(to_process==true){
         try{
-            await return_NFT_transactions(userId,chain_name,wallet);
+            await return_NFT_transactions(userId,chain_name,wallet,txn_page,inventory_page,token_page);
         }
         finally{
             var temp=chain_name.concat(wallet);
@@ -199,7 +214,10 @@ app.get('/', (req, res) => {
         "queryStringParameters":{
             "wallet":req.params.wallet,
             "userid":req.params.userid,
-            "chain":req.params.chain
+            "chain":req.params.chain,
+            "txn_page": req.params.txn_page,
+            "inventory_page": req.params.inventory_page,
+            "token_page": req.params.token_page,
         }
     };
     //const response=await hello(jsonData,'');
