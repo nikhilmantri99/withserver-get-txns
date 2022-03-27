@@ -1,8 +1,9 @@
 import Moralis from "moralis/node.js";
 import fetch from "node-fetch";
 import AWS from "aws-sdk";
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
 AWS.config.update({region:'us-east-1'});
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
+
 import {get_total_pages,put_txns,get_all_txns,get_page_txns,put_inventory,get_all_inventory,get_page_inventory,
     put_tokenwisemetrics,get_all_tokenwisemetrics,get_page_tokenwisemetrics,put_overall_metrics,get_overall_metrics} from "./dynamodb_utils.js";
 import {get_image_urls,get_inventory} from './inventory_utils.js';
