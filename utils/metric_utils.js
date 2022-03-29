@@ -3,7 +3,6 @@ import fetch from "node-fetch";
 import AWS from "aws-sdk";
 AWS.config.update({region:'us-east-1'});
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-
 import {get_inventory} from './inventory_utils.js';
 
 export async function get_metrics(ls,token_address,isoverall=false,inventory_NFTs=null,current_inventory_list=null,ispolygon=false){ //ls: list of transactions

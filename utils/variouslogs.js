@@ -3,12 +3,14 @@ import fetch from "node-fetch";
 import AWS from "aws-sdk";
 AWS.config.update({region:'us-east-1'});
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-
 import {get_total_pages,put_txns,get_all_txns,get_page_txns,put_inventory,get_all_inventory,get_page_inventory,
     put_tokenwisemetrics,get_all_tokenwisemetrics,get_page_tokenwisemetrics,put_overall_metrics,get_overall_metrics} from "./dynamodb_utils.js";
 import {get_image_urls,get_inventory} from './inventory_utils.js';
 import {get_metrics_token_wise,get_metrics} from './metric_utils.js';
 
+const serverUrl = "https://kpvcez1i2tg3.usemoralis.com:2053/server";
+const appId = "viZCI1CZimCj22ZTyFuXudn3g0wUnG2pELzPvdg6";
+Moralis.start({ serverUrl, appId });
 
 export async function fetch_from_url(url_,s=2){
     var response = await fetch(url_);
@@ -335,6 +337,19 @@ export async function return_state(waddress,chain_name,txn_page=1,inventory_page
     return obj;
 }
 
+export async function get_size(waddress,chain_name){
+    var txns_skipped=0;
+    var txns_processed=0;
+    const newResult = await get_page_txns(waddress,chain_name,1);
+    if(newResult[0]!=null){
+        txns_processed=newResult[4];
+        txns_skipped=newResult[5];
+    }
+    var transfersNFT = await Moralis.Web3API.account.getNFTTransfers({ chain: chain_name, address: waddress, limit: 1});
+    var total_nft_transfers_required=transfersNFT.total-(txns_processed+txns_skipped);
+    return total_nft_transfers_required;
+}
+
 export async function return_NFT_transactions(userid,chain_name,waddress,txn_page=1,inventory_page=1,tokenwisemetric_page=1){
     var to_update=false;
     var curr_txn_list=[];
@@ -350,9 +365,6 @@ export async function return_NFT_transactions(userid,chain_name,waddress,txn_pag
         txns_skipped=newResult[5];
     }
     var transcations_list=[];
-    const serverUrl = "https://kpvcez1i2tg3.usemoralis.com:2053/server";
-    const appId = "viZCI1CZimCj22ZTyFuXudn3g0wUnG2pELzPvdg6";
-    Moralis.start({ serverUrl, appId });
     var all_transfers=[];
     console.log("fetching...");
     var transfersNFT = await Moralis.Web3API.account.getNFTTransfers({ chain: chain_name, address: waddress, limit: 1});
