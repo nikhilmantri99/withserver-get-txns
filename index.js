@@ -99,11 +99,11 @@ async function process_this_wallet(userId,chain_name,wallet,txn_page,inventory_p
         token_page: token_page
     };
     if(to_process==true){
-        if(num_size<=50){
+        if(num_size<=100){
             console.log("Wallet Category : Small wallet");
             process_small_wallets(userId,chain_name,wallet,txn_page,inventory_page,token_page);
         }
-        else if(num_size>50 && num_size<=650){
+        else if(num_size>100 && num_size<=1000){
             console.log("Wallet Category : Medium wallet");
             if(q1.length==0 && rq1.length==0){
                 q1.push(req);
