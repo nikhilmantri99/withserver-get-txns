@@ -38,7 +38,7 @@ async function process_small_wallets(userId,chain_name,wallet,txn_page,inventory
         await return_NFT_transactions(userId,chain_name,wallet,txn_page,inventory_page,token_page);
     }
     finally{
-        var temp=req.wallet.concat(req.chain_name);
+        var temp=wallet.concat(chain_name);
         console.log("Finished processing the wallet: ",wallet," chain:",chain_name);
         delete wallet_processing_set[temp];
     }
