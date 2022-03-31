@@ -134,7 +134,7 @@ async function hello(event, context){
             body: JSON.stringify({ error: "No wallet provided." }),
         };
     }
-    wallet=String(wallet).toString();
+    wallet=String(wallet).toLowerCase();
     let userId = event["queryStringParameters"]['userid'];
     if(userId==null){
         userId="1";
