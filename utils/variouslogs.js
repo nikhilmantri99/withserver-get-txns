@@ -88,7 +88,7 @@ export async function covalent_logs(txn_hash,waddress,NFTfrom,NFTto,chain_name){
                 && ans["data"]["items"][0]["log_events"][i]["sender_contract_decimals"]==0
                 && ans["data"]["items"][0]["log_events"][i]["decoded"]["name"]=="Transfer"
                 && ans["data"]["items"][0]["log_events"][i]["decoded"]["params"]!=null
-                && ans["data"]["items"][0]["log_events"][i]["decoded"]["params"][1]["value"]==NFTto){
+                && ans["data"]["items"][0]["log_events"][i]["decoded"]["params"][0]["value"]==NFTfrom){
                     nft_count++;
                 }
         }
