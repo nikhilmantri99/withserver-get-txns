@@ -13,6 +13,7 @@ const appId = "viZCI1CZimCj22ZTyFuXudn3g0wUnG2pELzPvdg6";
 Moralis.start({ serverUrl, appId });
 
 export async function form_NFTcount_dictionary(all_transfers){
+    console.log("Forming count dictionary to help in bundled txns.....");
     var count_dict={};
     for (var i=0;i<all_transfers.length;i++){
         var temp = all_transfers[i]["transaction_hash"].concat(all_transfers[i]["from_address"],all_transfers[i]["to_address"]);
@@ -23,6 +24,7 @@ export async function form_NFTcount_dictionary(all_transfers){
             count_dict[temp]=1;
         }
     }
+    console.log("Dictionary formed!");
     return count_dict;
 }
 
@@ -152,10 +154,10 @@ export async function etherscan_logs(txn_hash,waddress,NFTfrom,NFTto,chain_name,
     const part3='&apikey=';
     const part4='3K72Z6I2T121TAQZ9DY34EF6F9NADKAH87';
     const url_complete=part1.concat(part2,part3,part4);
-    var ans = await fetch_from_url(url_complete,5);
+    var ans = await fetch_from_url(url_complete,8);
     if (ans["result"]=="Max rate limit exceeded"){
-        await new Promise(resolve => setTimeout(resolve, 5*1000)); // 3 sec
-        ans = await fetch_from_url(url_complete,5);
+        await new Promise(resolve => setTimeout(resolve, 8*1000)); // 3 sec
+        ans = await fetch_from_url(url_complete,8);
     }
     let mainmoney=0,commission=0;
     let count_occurence=0;//useful for bundle
@@ -259,6 +261,7 @@ export async function transaction_row(txn,waddress,chain_name,userid,txns_proces
     //console.log(transfersNFT.result[i].transaction_hash);
     var temp_=txn["transaction_hash"].concat(txn["from_address"],txn["to_address"]);
     var num_nft_transfers=count_dict[temp_];
+    //console.log("Num such NFT transfers:",num_nft_transfers);
     const value_from_hash_scans_=await value_from_hash(txn["transaction_hash"],waddress,
     txn["from_address"],txn["to_address"],chain_name,num_nft_transfers);
     //const value_from_hash_scans=null;
@@ -407,13 +410,13 @@ export async function return_NFT_transactions(userid,chain_name,waddress,txn_pag
         console.log(all_transfers.length);
         n++;
     }
-    var count_dict=form_NFTcount_dictionary(all_transfers);
+    var count_dict=await form_NFTcount_dictionary(all_transfers);
     //console.log(total_nft_transfers_required,all_transfers.length);
     //console.log(all_transfers[0]);
     console.log("For wallet address:",waddress," ,chain: ",chain_name,"total transactions:",all_transfers.length,"\nFollowing are the NFT Transaction values: ");
     let count=0;
     for(let i=0;i<all_transfers.length;i++){
-        var txn_row=await transaction_row(all_transfers[i],waddress,chain_name,userid,txns_processed,txns_skipped,count);
+        var txn_row=await transaction_row(all_transfers[i],waddress,chain_name,userid,txns_processed,txns_skipped,count,count_dict);
         var this_transaction=txn_row[0];
         txns_processed=txn_row[1];
         txns_skipped=txn_row[2];
