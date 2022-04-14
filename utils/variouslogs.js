@@ -315,6 +315,7 @@ export async function transaction_row(txn,waddress,chain_name,userid,txns_proces
         txn_storage_dict[temp_]=ls;
     }
     else{
+        console.log(temp_);
         console.log("Bundled txn which we already stored in our dict. Picking value from there.");
         var ls=txn_storage_dict[temp_];
         final_value=ls.slice(0,3);
